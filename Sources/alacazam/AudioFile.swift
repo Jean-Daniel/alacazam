@@ -150,3 +150,36 @@ extension AudioFile {
   }
 }
 
+extension AudioFormatFlags {
+  var bitDepth: Int {
+    switch (self) {
+    case kAppleLosslessFormatFlag_16BitSourceData:
+      return 16
+    case kAppleLosslessFormatFlag_20BitSourceData:
+      return 20
+    case kAppleLosslessFormatFlag_24BitSourceData:
+      return 24
+    case kAppleLosslessFormatFlag_32BitSourceData:
+      return 32
+    default:
+      return 0
+    }
+  }
+}
+
+extension AVAudioFormat {
+
+  var bitDepth: Int {
+    let asbd = streamDescription
+    if (asbd.pointee.mBitsPerChannel > 0) {
+      return Int(asbd.pointee.mBitsPerChannel)
+    }
+    switch (asbd.pointee.mFormatID) {
+    case kAudioFormatFLAC,
+         kAudioFormatAppleLossless:
+      return asbd.pointee.mFormatFlags.bitDepth
+    default:
+      return 0
+    }
+  }
+}

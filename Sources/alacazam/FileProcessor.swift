@@ -34,7 +34,7 @@ class FileProcessor {
       AVFormatIDKey: kAudioFormatAppleLossless,
       AVSampleRateKey: format.sampleRate,
       AVNumberOfChannelsKey: format.channelCount,
-      AVEncoderBitDepthHintKey: try aid.bitDepth()
+      AVEncoderBitDepthHintKey: format.bitDepth
     ]
     // '*** -[AVAssetWriterInput initWithMediaType:outputSettings:sourceFormatHint:] Channel layout is not valid for Format ID 'alac'.  Use kAudioFormatProperty_AvailableEncodeChannelLayoutTags (<AudioToolbox/AudioFormat.h>) to enumerate available channel layout tags for a given format.'
 //    if let layout = format.channelLayout {
