@@ -9,7 +9,7 @@
 import OSLog
 import Foundation
 
-import SPMUtility
+import ArgumentParser
 
 func doWork(sources: [String], dest: String) {
   guard let file = sources.first else {
@@ -44,41 +44,32 @@ func doWork(sources: [String], dest: String) {
 }
 
 // MARK: - main
-do {
-  let parser = ArgumentParser(commandName: "alacazam",
-                              usage: "alacazam",
-                              overview: "convert audio files to alac")
+struct Alacazam: ParsableCommand {
 
-  let output = parser.add(option: "--output",
-                          shortName: "-o",
-                          kind: String.self,
-                          usage: "Output directory",
-                          completion: .filename)
+  static var configuration = CommandConfiguration(
+    commandName: "alacazam",
+    abstract: "Convert audio files to alac."
+  )
 
-  let files = parser.add(positional: "sources",
-                         kind: [String].self,
-                         optional: false,
-                         strategy: .upToNextOption,
-                         usage: "Source files",
-                         completion: ShellCompletion.filename)
+  @Argument(help: "input files")
+  var files: [String]
 
-  let argsv = Array(CommandLine.arguments.dropFirst())
-  let parguments = try parser.parse(argsv)
+  @Option(name: [.short, .customLong("output")], default: ".", help: "Output directory")
+  var outputDir: String
 
-  let dest = parguments.get(output) ?? "."
-
-  if let sources = parguments.get(files) {
-    autoreleasepool {
-      doWork(sources: sources, dest: dest)
+  mutating func validate() throws {
+    guard files.count >= 1 else {
+      throw ValidationError("Please specify at least 1 input file.")
     }
   }
 
-  CFRunLoopRun()
-} catch ArgumentParserError.expectedValue(let value) {
-  print("Missing value for argument \(value).")
-} catch ArgumentParserError.expectedArguments(_, let stringArray) {
-  print("Missing arguments: \(stringArray.joined()).")
-} catch {
-  print(error.localizedDescription)
+  func run() throws {
+    autoreleasepool {
+      doWork(sources: files, dest: outputDir)
+    }
+
+    CFRunLoopRun()
+  }
 }
 
+Alacazam.main()
