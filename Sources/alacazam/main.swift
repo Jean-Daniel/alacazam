@@ -11,7 +11,7 @@ import Foundation
 
 import ArgumentParser
 
-func doWork(sources: [String], dest: String) {
+func doWork(sources: [String], dest: String, compress: Bool) {
   guard let file = sources.first else {
     // Asset writer is aync and we can't tell when it is done cleaning up temporary files.
     // It spawns its cleanup code on a background thread, so wait a little before exiting.
@@ -25,12 +25,12 @@ func doWork(sources: [String], dest: String) {
 
   let url = URL(fileURLWithPath: file)
   do {
-    let processor = try FileProcessor(url: url, dest: URL(fileURLWithPath: dest))
+    let processor = try FileProcessor(url: url, dest: URL(fileURLWithPath: dest), compress: compress)
     try processor.run {
       _ = processor // lifetime
       DispatchQueue.main.async {
         autoreleasepool {
-          doWork(sources: Array(sources.dropFirst()), dest: dest)
+          doWork(sources: Array(sources.dropFirst()), dest: dest, compress: compress)
         }
       }
     }
@@ -38,7 +38,7 @@ func doWork(sources: [String], dest: String) {
     print("[error] failed to read file: \(error.localizedDescription)")
 
     DispatchQueue.main.async {
-      autoreleasepool { doWork(sources: Array(sources.dropFirst()), dest: dest) }
+      autoreleasepool { doWork(sources: Array(sources.dropFirst()), dest: dest, compress: compress) }
     }
   }
 }
@@ -54,6 +54,9 @@ struct Alacazam: ParsableCommand {
   @Argument(help: "input files")
   var files: [String]
 
+  @Flag(name: [.short, .long], help: "compress files in AAC")
+  var compress: Bool
+
   @Option(name: [.short, .customLong("output")], default: ".", help: "Output directory")
   var outputDir: String
 
@@ -65,7 +68,7 @@ struct Alacazam: ParsableCommand {
 
   func run() throws {
     autoreleasepool {
-      doWork(sources: files, dest: outputDir)
+      doWork(sources: files, dest: outputDir, compress: compress)
     }
 
     CFRunLoopRun()
