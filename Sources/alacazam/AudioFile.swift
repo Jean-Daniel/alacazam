@@ -67,13 +67,22 @@ private extension AVMetadataIdentifier {
     switch (self) {
     case .iTunesMetadataTrackNumber:
       if let str = value as? String, let track = parseTrkn(str) {
-        return encodeTrackNumber(track.0, track.1) as NSData
+        return encodeTrackNumber(num: track.0, count: track.1) as NSData
       }
       return nil
     default:
       return value as? (NSObjectProtocol & NSCopying)
     }
   }
+}
+
+private func encodeTrackNumber(num: UInt32, count: UInt32) -> Data {
+  var buffer: Data = Data(count: 8)
+  buffer.withUnsafeMutableBytes { (pointer: UnsafeMutableRawBufferPointer) -> Void in
+    pointer.storeBytes(of: num.bigEndian, as: UInt32.self)
+    pointer.storeBytes(of: UInt16(count.bigEndian), toByteOffset: 4, as: UInt16.self)
+  }
+  return buffer
 }
 
 typealias AudioFile = AudioFileID

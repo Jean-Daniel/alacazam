@@ -11,7 +11,7 @@ import Foundation
 
 import ArgumentParser
 
-func doWork(sources: [String], dest: String, compress: Bool) {
+func doWork(sources: [String], dest: String, options: FileProcessor.Options) {
   guard let file = sources.first else {
     // Asset writer is aync and we can't tell when it is done cleaning up temporary files.
     // It spawns its cleanup code on a background thread, so wait a little before exiting.
@@ -25,12 +25,12 @@ func doWork(sources: [String], dest: String, compress: Bool) {
 
   let url = URL(fileURLWithPath: file)
   do {
-    let processor = try FileProcessor(url: url, dest: URL(fileURLWithPath: dest), compress: compress)
+    let processor = try FileProcessor(url: url, dest: URL(fileURLWithPath: dest), options: options)
     try processor.run {
       _ = processor // lifetime
       DispatchQueue.main.async {
         autoreleasepool {
-          doWork(sources: Array(sources.dropFirst()), dest: dest, compress: compress)
+          doWork(sources: Array(sources.dropFirst()), dest: dest, options: options)
         }
       }
     }
@@ -38,7 +38,7 @@ func doWork(sources: [String], dest: String, compress: Bool) {
     print("[error] failed to read file: \(error.localizedDescription)")
 
     DispatchQueue.main.async {
-      autoreleasepool { doWork(sources: Array(sources.dropFirst()), dest: dest, compress: compress) }
+      autoreleasepool { doWork(sources: Array(sources.dropFirst()), dest: dest, options: options) }
     }
   }
 }
@@ -52,13 +52,16 @@ struct Alacazam: ParsableCommand {
   )
 
   @Argument(help: "input files")
-  var files: [String]
+  var files: [String] = []
 
   @Flag(name: [.short, .long], help: "compress files in AAC")
-  var compress: Bool
+  var compress: Bool = false
 
-  @Option(name: [.short, .customLong("output")], default: ".", help: "Output directory")
-  var outputDir: String
+  @Option(name: [.short, .long, .customLong("bps")], help: "bit per sample. Defaults to input file bps.")
+  var bitPerSample: Int = -1
+
+  @Option(name: [.short, .customLong("output")], help: "Output directory.")
+  var outputDir: String = "."
 
   mutating func validate() throws {
     guard files.count >= 1 else {
@@ -66,9 +69,10 @@ struct Alacazam: ParsableCommand {
     }
   }
 
-  func run() throws {
+  mutating func run() throws {
     autoreleasepool {
-      doWork(sources: files, dest: outputDir, compress: compress)
+      let options = FileProcessor.Options(compress: compress, bitPerSample: bitPerSample)
+      doWork(sources: files, dest: outputDir, options: options)
     }
 
     CFRunLoopRun()

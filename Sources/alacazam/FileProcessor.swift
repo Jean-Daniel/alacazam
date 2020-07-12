@@ -12,10 +12,15 @@ import AudioUtils
 
 class FileProcessor {
 
+  struct Options {
+    let compress: Bool
+    let bitPerSample: Int
+  }
+
   let source: AVAudioFile
   let writer: AVAssetWriter
 
-  init(url: URL, dest: URL, compress: Bool) throws {
+  init(url: URL, dest: URL, options: Options) throws {
     let aid = try AudioFile(url: url) // CoreAudio required to extract some properties (metadata, source bit depth, …)
     defer { aid.close() }
 
@@ -31,7 +36,7 @@ class FileProcessor {
 
     let format = source.fileFormat
     let output: [String:Any]
-    if (compress) {
+    if (options.compress) {
       output = [
         AVFormatIDKey: kAudioFormatMPEG4AAC,
         AVSampleRateKey: format.sampleRate,
@@ -39,13 +44,15 @@ class FileProcessor {
         AVEncoderBitRateKey: 256000,
         AVEncoderBitRateStrategyKey: AVAudioBitRateStrategy_VariableConstrained,
       ]
+      print("\tAAC \(output[AVSampleRateKey]!)Hz \(output[AVEncoderBitRateKey]!) bit/s - \(output[AVNumberOfChannelsKey]!) channels")
     } else {
       output = [
         AVFormatIDKey: kAudioFormatAppleLossless,
         AVSampleRateKey: format.sampleRate,
         AVNumberOfChannelsKey: format.channelCount,
-        AVEncoderBitDepthHintKey: format.bitDepth
+        AVEncoderBitDepthHintKey: options.bitPerSample > 0 ? min(options.bitPerSample, format.bitDepth) : format.bitDepth
       ]
+      print("\tlossless \(output[AVSampleRateKey]!)Hz \(output[AVEncoderBitDepthHintKey]!) bit - \(output[AVNumberOfChannelsKey]!) channels")
     }
     // '*** -[AVAssetWriterInput initWithMediaType:outputSettings:sourceFormatHint:] Channel layout is not valid for Format ID 'alac'.  Use kAudioFormatProperty_AvailableEncodeChannelLayoutTags (<AudioToolbox/AudioFormat.h>) to enumerate available channel layout tags for a given format.'
 //    if let layout = format.channelLayout {
