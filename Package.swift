@@ -9,8 +9,7 @@ let package = Package(
       .macOS(.v10_15),
   ],
   products: [
-    .executable(name: "alacazam", targets: ["alacazam"]),
-    .library(name: "AudioUtils", type: .static,targets: ["AudioUtils"]),
+    .executable(name: "alacazam", targets: ["alacazam"])
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
@@ -21,10 +20,7 @@ let package = Package(
     // Targets can depend on other targets in this package, and on products in packages which this package depends on.
     .target(
       name: "alacazam",
-      dependencies: ["AudioUtils", "ArgumentParser"]),
-    .target(
-      name: "AudioUtils",
-      dependencies: [])
+      dependencies: ["ArgumentParser"])
   ],
   swiftLanguageVersions: [.v5]
 )

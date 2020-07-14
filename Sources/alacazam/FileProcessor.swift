@@ -8,8 +8,6 @@
 import Foundation
 import AVFoundation
 
-import AudioUtils
-
 class FileProcessor {
 
   struct Options {
@@ -97,6 +95,17 @@ class FileProcessor {
     }
   }
 }
+
+private extension Data {
+
+  init(channelLayout layout: AVAudioChannelLayout) {
+    var length = MemoryLayout<AudioChannelLayout>.offset(of: \AudioChannelLayout.mChannelDescriptions)!
+    length += Int(layout.layout.pointee.mNumberChannelDescriptions) * MemoryLayout<AudioChannelDescription>.size;
+    self.init(bytes: layout.layout, count: length)
+  }
+
+}
+
 
 private extension AVAudioPCMBuffer {
   func sampleBuffer(timeStamp: CMTime = CMTime.zero) throws -> CMSampleBuffer {
